@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>User Spend Manager</title>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://rawgit.com/daniel-nagy/md-data-table/master/dist/md-data-table.css">
+</head>
+<body ng-app="spendManager">
+	<div id="mainDiv" ng-controller="spendCtrl" ng-init="fetchAllSpends()">
+		<h1 align="center">User Spend Manager</h1>
+		<md-table-container>
+		<table md-table md-row-select multiple ng-model="selected" md-progress="promise">
+			<thead md-head >
+				<tr md-row>
+					<th md-column >Expense Amount</th>
+					<th md-column >Expense Date</th>
+					<th md-column >Expense Type </th>
+				</tr>
+			</thead>
+			<tbody md-body>
+				<tr md-row md-auto-select ng-repeat="x in userExpenses">
+					<td md-cell>{{ x.expenseAmount }}</td>
+					<td md-cell>{{x.expenseDate | date:'yyyy-MM-dd' }}</td>
+					<td md-cell>{{x.expenseType}}</td>
+				</tr>
+			</tbody>
+		</table>
+		</md-table-container><br><br>
+		<button class="md-raised md-primary" ng-click="showAlert()" style="float: right;margin-right:200px">Add Spend</button>
+	</div>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.js"></script>
+    <script src="https://rawgit.com/daniel-nagy/md-data-table/master/dist/md-data-table.js"></script>
+</body>
+<script>
+	var app = angular.module('spendManager', ['ngMaterial']);
+	app.controller('spendCtrl', function($scope, $http, $mdDialog) {
+		$scope.firstName = "John";
+		$scope.lastName = "Doe";
+
+		$scope.fetchAllSpends = function(){
+			console.log("fetching spends");
+			$http({
+			    url: "http://localhost:7990/v1/fetch_expenses/111", 
+			    method: "GET"
+			 }).then(function(data){
+				 console.log(data);
+				 $scope.userExpenses = data.data;
+			 }).catch(function(err){
+				 console.log(err);
+			 });
+		}
+		
+		$scope.showAlert = function(){
+		    $mdDialog.show({
+		      controller: function($scope, $mdDialog){
+		    	  $scope.close = function($event) {
+		                $mdDialog.cancel();
+		          };
+		          $scope.addSpend = function(etype,edate,eamt) {
+		  			console.log("adding spend");
+		  			var userExpenseAddRequest = {};
+		  			userExpenseAddRequest["expenseAmount"] = eamt;
+		  			userExpenseAddRequest["expenseType"] = etype;
+		  			userExpenseAddRequest["expenseDate"] = edate;
+		  			$http({
+		  			    url: "http://localhost:7990/v1/add_user_expenses/111", 
+		  			    method: "POST",
+		  			    body:{userExpenseAddRequest	} ,
+		  			    headers: {'Content-Type': 'application/json'}
+		  			 }).then(function(data){
+		  				 console.log(data);
+		  			 }).catch(function(err){
+		  				 console.log(err);
+		  			 });
+		  		  }
+		      },
+		      template: '<md-dialog aria-label="My Dialog">'+
+		                    '<md-dialog-content>' 
+		                    + 'Type :: <input ng-model="etype" type="text"></input><br/> Date :: <input ng-model="edate" type="text"></input> <br/> Amount :: <input ng-model="eamt" type="text"></input>'+
+		                    '</md-dialog-content>' +
+		                    '<md-button ng-click=close()>Close</md-button>' +
+		                    '<md-button ng-click=addSpend(etype,edate,eamt) ng-disabled="etype == undefined || edate == undefined || eamt == undefine">Add</md-button>' + 
+		                    '</md-dialog>',
+		      targetEvent: event
+		    });
+		  };
+	});
+</script>
+</html>
+
